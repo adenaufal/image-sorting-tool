@@ -13,7 +13,16 @@ from datetime import datetime
 from dateutil import parser
 from PIL import Image
 
+try:
+    import exifread
+    EXIFREAD_AVAILABLE = True
+except ImportError:
+    EXIFREAD_AVAILABLE = False
+
 JPEG_EXTENSIONS = [".jpg", ".jpeg", ".jif", ".jpe", ".jfif", ".jfi", ".jp2", ".jpx"]
+VIDEO_EXTENSIONS = [".mp4", ".mov", ".avi"]
+RAW_EXTENSIONS = [".cr2", ".dng"]
+PSD_EXTENSIONS = [".psd"]
 
 logger = logging.getLogger("image-sorting-tool")
 
@@ -300,6 +309,11 @@ class ImageSort:
                 input_file.datetime = ImageSort._get_datetime_from_exif(
                     input_file.fullpath
                 )
+            elif input_file.extension.lower().endswith(tuple(RAW_EXTENSIONS)):
+                # the file is RAW (CR2/DNG) so try extract datetime using exifread
+                input_file.datetime = ImageSort._get_datetime_from_raw(
+                    input_file.fullpath
+                )
             else:
                 input_file.datetime = ImageSort._get_datetime_from_filename(
                     input_file.fullpath
@@ -325,6 +339,30 @@ class ImageSort:
             return dtime
         except Exception:
             # Reading from exif failed, try filename instead
+            return ImageSort._get_datetime_from_filename(filepath)
+
+    @staticmethod
+    def _get_datetime_from_raw(filepath):
+        """Attempt to get the datetime from RAW files (CR2, DNG) using exifread library"""
+        # pylint: disable=(broad-except)
+        if not EXIFREAD_AVAILABLE:
+            return ImageSort._get_datetime_from_filename(filepath)
+        try:
+            with open(filepath, "rb") as raw_file:
+                tags = exifread.process_file(raw_file, stop_tag="EXIF DateTimeOriginal")
+                if "EXIF DateTimeOriginal" in tags:
+                    date_taken = str(tags["EXIF DateTimeOriginal"])
+                    dtime = datetime.strptime(date_taken, "%Y:%m:%d %H:%M:%S")
+                    return dtime
+                # Try alternative tag
+                if "Image DateTime" in tags:
+                    date_taken = str(tags["Image DateTime"])
+                    dtime = datetime.strptime(date_taken, "%Y:%m:%d %H:%M:%S")
+                    return dtime
+            # No EXIF date found, fall back to filename
+            return ImageSort._get_datetime_from_filename(filepath)
+        except Exception:
+            # Reading from exifread failed, try filename instead
             return ImageSort._get_datetime_from_filename(filepath)
 
     @staticmethod

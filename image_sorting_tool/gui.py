@@ -14,6 +14,9 @@ from tkinter import messagebox
 from image_sorting_tool import __version__
 from image_sorting_tool.image_sort import ImageSort
 from image_sorting_tool.image_sort import JPEG_EXTENSIONS
+from image_sorting_tool.image_sort import VIDEO_EXTENSIONS
+from image_sorting_tool.image_sort import RAW_EXTENSIONS
+from image_sorting_tool.image_sort import PSD_EXTENSIONS
 
 logger = logging.getLogger("image-sorting-tool")
 
@@ -42,6 +45,10 @@ class GUI(tk.Tk):
         self.png_sort = tk.IntVar()
         self.gif_sort = tk.IntVar()
         self.mp4_sort = tk.IntVar()
+        self.mov_sort = tk.IntVar()
+        self.avi_sort = tk.IntVar()
+        self.raw_sort = tk.IntVar()
+        self.psd_sort = tk.IntVar()
         self.rename_duplicates = tk.IntVar()
         self.copy_other_files = tk.IntVar()
         self.textbox_width = 100
@@ -148,6 +155,42 @@ class GUI(tk.Tk):
             state="normal",
         )
         mp4_checkbox.pack(anchor="w")
+
+        # Checkbox for MOV
+        mov_checkbox = ttk.Checkbutton(
+            file_type_options_frame,
+            text="MOV: Apple QuickTime video format",
+            variable=self.mov_sort,
+            state="normal",
+        )
+        mov_checkbox.pack(anchor="w")
+
+        # Checkbox for AVI
+        avi_checkbox = ttk.Checkbutton(
+            file_type_options_frame,
+            text="AVI: Windows video format (Audio Video Interleave)",
+            variable=self.avi_sort,
+            state="normal",
+        )
+        avi_checkbox.pack(anchor="w")
+
+        # Checkbox for RAW (CR2/DNG)
+        raw_checkbox = ttk.Checkbutton(
+            file_type_options_frame,
+            text="CR2/DNG: RAW images from cameras (Canon, Adobe Digital Negative)",
+            variable=self.raw_sort,
+            state="normal",
+        )
+        raw_checkbox.pack(anchor="w")
+
+        # Checkbox for PSD
+        psd_checkbox = ttk.Checkbutton(
+            file_type_options_frame,
+            text="PSD: Adobe Photoshop files",
+            variable=self.psd_sort,
+            state="normal",
+        )
+        psd_checkbox.pack(anchor="w")
 
         # Extra options frame
         extra_options_frame = ttk.LabelFrame(self, text="Extra Options:")
@@ -258,6 +301,14 @@ class GUI(tk.Tk):
             self.ext_to_sort.append(".gif")
         if self.mp4_sort.get():
             self.ext_to_sort.append(".mp4")
+        if self.mov_sort.get():
+            self.ext_to_sort.append(".mov")
+        if self.avi_sort.get():
+            self.ext_to_sort.append(".avi")
+        if self.raw_sort.get():
+            self.ext_to_sort.extend(RAW_EXTENSIONS)
+        if self.psd_sort.get():
+            self.ext_to_sort.extend(PSD_EXTENSIONS)
         logger.debug("Extensions to sort: %s", self.ext_to_sort)
 
     def find_images(self):
